@@ -1,77 +1,93 @@
-
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
-<title>WASMpsx</title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<style>
-body,h1 {font-family: "Montserrat", sans-serif}
+<head>
+    <title>PS1 Portal - Master Build</title>
+    <script src="wasmpsx.min.js" defer></script>
+    <style>
+        body { background: #000; color: #fff; margin: 0; overflow: hidden; font-family: sans-serif; }
+        .ui { background: #111; padding: 10px; position: relative; z-index: 100; border-bottom: 2px solid #333; }
+        
+        #viewport {
+            width: 100vw;
+            height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
 
-</style>
+        wasmpsx-player {
+            transform: scale(2.0); /* Increase this to 2.2 if the screen is still too small */
+            transform-origin: center;
+        }
+
+        canvas { image-rendering: pixelated; }
+        button, input { background: #333; color: #fff; border: 1px solid #555; padding: 5px; cursor: pointer; }
+    </style>
+</head>
 <body>
+    <div class="ui">
+        <input type="file" id="rom-input">
+        <button id="export-btn">SAVE TO DEVICE</button>
+        <button onclick="document.getElementById('import-input').click()">LOAD FROM DEVICE</button>
+        <input type="file" id="import-input" style="display:none">
+        <span id="kb-status" style="color:yellow; font-size: 12px; margin-left:10px;">Load game then click screen for controls</span>
+    </div>
 
-<!-- Sidebar -->
+    <div id="viewport">
+        <wasmpsx-player id="emu"></wasmpsx-player>
+    </div>
 
+    <script>
+        const player = document.getElementById('emu');
 
+        // Manual Key Map
+        const keyMap = {
+            'x': 'cross', 'z': 'circle', 's': 'square', 'a': 'triangle',
+            'Enter': 'start', 'Shift': 'select',
+            'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right'
+        };
 
-<!-- Header -->
-<div class="w3-opacity">
-<div class="w3-clear"></div>
-<header class="w3-center w3-margin-bottom">
-  <h1><b>WASMpsx</b></h1>
-  <p><b>A PlayStation emulator for your own uses.</b></p>
-<div> ‏‏‎ </div>
-<h1> Demo </h1>
-</header>
-</div>
+        window.onload = () => {
+            // Load Game
+            document.getElementById('rom-input').onchange = (e) => {
+                player.readFile(e.target.files[0]);
+                document.getElementById('kb-status').innerText = "SYSTEM ACTIVE - CLICK GAME SCREEN";
+            };
 
+            // Inject Controls
+            window.addEventListener('keydown', (e) => {
+                if (keyMap[e.key]) player.setButtonState(keyMap[e.key], true);
+            });
+            window.addEventListener('keyup', (e) => {
+                if (keyMap[e.key]) player.setButtonState(keyMap[e.key], false);
+            });
 
+            // Export Save (Extract from Emulator)
+            document.getElementById('export-btn').onclick = () => {
+                try {
+                    // This pulls the Memory Card file from the virtual file system
+                    const data = player.fs.readFile('mcd0.mcd');
+                    const blob = new Blob([data], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "ps1_save.mcd";
+                    a.click();
+                } catch(e) { 
+                    alert("Error: No save data found. Make sure you saved at a point in the game first."); 
+                }
+            };
 
-
-
-
-  
-    <wasmpsx-player></wasmpsx-player>    
-  <button onclick="document.getElementById('e').click()" style="position: relative; left: 45%; background-color:#eee; border-color: #eee">Choose a ROM</button>
-  <input id="e" style="display: none;" type="file"  onchange="document.querySelector('wasmpsx-player').readFile(this.files[0]);" />
-
-
-<!-- Header -->
-<div class="w3-opacity">
-<div class="w3-clear"></div>
-<header class="w3-center w3-margin-bottom">
-<div> ‏‏‎ </div>
-<h1> About </h1>
-</header>
-</div>
-
-<div class="preview"><div class="preview__inner-1"><div class="preview__inner-2" style="padding: 10px 25px 302px;"><div class="cl-preview-section"><h1 id="wasmpsx">WASMpsx</h1>
-</div><div class="cl-preview-section"><p>A fork of TJWei’s PlayStation emulator to use for your own purposes.<br>
-</div><div class="cl-preview-section"><h1 id="adding-to-website">Adding to website</h1>
-</div><div class="cl-preview-section"><p>To add this to your website, click <a href="http://download-wasmpsx.glitch.me/">here</a> so you can download the WASMpsx source code as a ZIP file.</p>
-</div><div class="cl-preview-section"><p>Then, add them to your website and create a <code>&lt;script&gt;</code> tag like this:</p>
-</div><div class="cl-preview-section"><pre><code>&lt;script src="path/to/wasmpsx.min.js"&gt;&lt;/script&gt;
-</code></pre>
-</div><div class="cl-preview-section"><p>After those steps, you are ready to use WASMpsx!</p>
-</div><div class="cl-preview-section"><h1 id="usage">Usage</h1>
-</div><div class="cl-preview-section"><p>To use WASMpsx, use this example script:</p>
-</div><div class="cl-preview-section"><pre><code>document.getElementById('my-wasmpsx-element').loadUrl('/path/to/granturismo.bin');
-</code></pre>
-</div><div class="cl-preview-section"><h4 id="note-does-not-come-with-example-rom-files.">Note: does not come with example ROM files.</h4>
-</div><div class="cl-preview-section"><p>And to load files, not URLs, use this script:</p>
-</div><div class="cl-preview-section"><pre><code>document.getElementById('my-wasmpsx-element').readFile(file here, useful for file input);
-</code></pre>
-</div><div class="cl-preview-section"><p>To add a display, add a <code>wasmpsx-player</code> element.</p>
-</div><div class="cl-preview-section"><p>Example element:</p>
-</div><div class="cl-preview-section"><pre><code>&lt;wasmpsx-player id="my-wasmpsx-element"&gt;&lt;/wasmpsx-player&gt;
-</code></pre>
-</div></div> <div class="gutter" style="left: 0px;"><!----> <!----></div></div> <!----></div>
-<script src="wasmpsx.min.js"></script>
-  <script>
-        setTimeout(function(){
-   document.querySelector('wasmpsx-player').shadowRoot.querySelector('canvas').style="border: 0px none; background-color: black; top: 0px; top: 0; position: relative; display: block; margin: auto;";
-    }, 100);
+            // Import Save (Inject into Emulator)
+            document.getElementById('import-input').onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    player.readFile(file);
+                    alert("Memory Card inserted. You can now load your save in the game menu.");
+                }
+            };
+        };
     </script>
+</body>
+</html>
